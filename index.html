@@ -1,0 +1,132 @@
+<HTML>
+<HEAD>
+
+<TITLE>Tinv at home</TITLE>
+</HEAD>
+<BODY>
+<SCRIPT>
+var jsonData = "";
+var arrayData="";
+const testData="<div class='container player'><img src='https://tinvapi.dark-gaming.com/item_image/4128'/>PLAYER NAME ♥600/600 ★200/200<br><div class='item box'><div class='item itemslot'>1<img src='https://tinvapi.dark-gaming.com/item_image/434'></div></div><div class='item box'><div class='item itemslot'>2<img src='https://tinvapi.dark-gaming.com/item_image/435'></div></div></div>";
+var tinvURL="https://tinv.dark-gaming.com/pvp/player/";
+
+
+window.onload= async function getData(){
+	var pvpData = await fetch("https://tinvapi.dark-gaming.com/pvp");//TODO: Make this not static, so it can also see survival
+	if(!pvpData.ok){
+		
+		const newDiv = document.createElement("div");
+		newDiv.innerHTML = "<h1>Tinv or DG is down, Go to tRealms/TSNG or something</h1><img src='https://media1.tenor.com/m/os2Fb38u1Y8AAAAd/peralnq.gif'>";
+		const currentDiv = document.getElementById("div1");
+		document.body.insertBefore(newDiv,currentDiv);
+		throw new Error('We got a :' + pvpData.status);
+	}	
+	jsonData = await pvpData.json();	//we convert it into json cuz its actually on plaintext for some reason
+	arrayData=Object.values(jsonData["players"]);
+	//console.log(arrayData.length);
+	if(arrayData.length<1){
+		const newDiv = document.createElement("div");
+		newDiv.innerHTML = "<h1>PvP is dead</h1><img src='https://media.tenor.com/DqOx5At4J4cAAAAi/explosion.gif'>";
+		const currentDiv = document.getElementById("div1");
+		document.body.insertBefore(newDiv,currentDiv);
+	}else{
+	/*console.log(jsonData);	
+	console.log(Object.values(jsonData));
+	console.log(jsonData["players"]);*/
+	arrayData.forEach((element) => 
+		mapData(element)
+	);
+	}
+}
+
+function mapHotbar(itm){
+	var pageHotbar ="<div class='slotid'>"+
+		(count%10) +
+		"<div class='item itemslot'>"+
+			"<img style='width:40px' src='https://tinvapi.dark-gaming.com/item_image/"+itm["netId"]+"'>"+
+		"</div>"+
+	"</div>";
+	pageHeader=pageHeader+pageHotbar;
+	count=count+1;
+}
+var count = 1;	//this is just for the slot id
+var pageHeader = "";//cuz i ain't dealing with js parameters, fuck it, public
+var pageFooter=	"</div></div><br>";
+function mapData(plr){
+	count=1;
+	var nickName=(plr["nickname"].replaceAll(" ","+")).replaceAll("#","%23"); //+ nor %20 works anymore, they broke it litterally while i was making this :< , Congrats administrtion!
+	var hotbar = Object.values(plr["hotbar"]);
+	var headItem = Object.values(plr["headItem"]);
+	/*console.log(plr);
+	console.log("Starting mapping");
+	console.log(nickName);
+	console.log(plr["registered"]);
+	console.log(plr["health"]);
+	console.log(plr["mana"]);
+	console.log(plr["maxHealthWithBuffs"]);
+	console.log(plr["maxManaWithBuffs"]);
+	console.log(hotbar);
+	console.log(headItem[0]);*/
+	const newContainer = document.createElement("div");
+	//Writting manually the html
+	pageHeader = "<div class='container player'>"+
+	"<img src='https://tinvapi.dark-gaming.com/item_image/"+headItem[0]+"'/>"+
+	plr["nickname"]+" &#9;&#9;♥"+plr["health"]+"/"+plr["maxHealthWithBuffs"]+" ★"+plr["mana"]+"/"+plr["maxManaWithBuffs"]+" Registered on :"+ plr["registered"]+ "<a href="+tinvURL+nickName+" >\tView Inventory</a>"+
+	"<br>"+
+	"<div class='container hotbar'>";
+	hotbar.forEach((element)=> //because javascript is javascript we have to make it into another function
+		mapHotbar(element)
+	);
+	//console.log(pageHeader+pageFooter);
+	newContainer.innerHTML = pageHeader+pageFooter;
+	const currentDiv = document.getElementById("div1");
+	document.body.insertBefore(newContainer,currentDiv);
+}
+</SCRIPT>
+<STYLE>
+body {
+	background-color: black;
+	color:white;
+}
+.player{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #22DDFF,
+	0px 0px 1px #22DDFF;
+	color:white;
+}
+.hotbar{
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+}
+.itemslot{
+	justify-content: center;
+	display: flex;
+	align-items: center;
+	width: 64px;
+	height: 50px;
+
+}
+.slotid{
+	
+	border: 3px solid black;
+	border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 1px 1px #FFFFFF,
+	0px 0px 1px #22DDFF;
+    flood-color: #460910;
+    border-bottom-width: thick;
+    border-bottom-color: aqua;
+	vertical-align: top;
+}
+</STYLE>
+"Because we always have to fix everything :<"
+<br>
+
+</BODY>
+</HTML>
