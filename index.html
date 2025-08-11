@@ -8,25 +8,35 @@
 var jsonData = "";
 var arrayData="";
 const testData="<div class='container player'><img src='https://tinvapi.dark-gaming.com/item_image/4128'/>PLAYER NAME ♥600/600 ★200/200<br><div class='item box'><div class='item itemslot'>1<img src='https://tinvapi.dark-gaming.com/item_image/434'></div></div><div class='item box'><div class='item itemslot'>2<img src='https://tinvapi.dark-gaming.com/item_image/435'></div></div></div>";
-var tinvURL="https://tinv.dark-gaming.com/pvp/player/";
+var tinvURL="https://tinvapi.dark-gaming.com/";
+var mode=0;//0=PvP 1=Survival 2=PvE 3=Build
+var loadTo="pvp";
 
+window.onload = async function startup(){
+	getData()
+}
 
-window.onload= async function getData(){
-	var pvpData = await fetch("https://tinvapi.dark-gaming.com/pvp");//TODO: Make this not static, so it can also see survival
-	if(!pvpData.ok){
-		
-		const newDiv = document.createElement("div");
+async function getData(){
+	clear();
+	if(mode==0){
+		loadTo="pvp";
+	}else{
+		loadTo="survival";
+	}
+	var pvpData = await fetch("https://tinvapi.dark-gaming.com/"+loadTo);
+	if(!pvpData.ok){ //if an oopsie happens
+		const newDiv = document.createElement("plrDiv");
 		newDiv.innerHTML = "<h1>Tinv or DG is down, Go to tRealms/TSNG or something</h1><img src='https://media1.tenor.com/m/os2Fb38u1Y8AAAAd/peralnq.gif'>";
-		const currentDiv = document.getElementById("div1");
+		const currentDiv = document.getElementById("plrDiv");
 		document.body.insertBefore(newDiv,currentDiv);
 		throw new Error('We got a :' + pvpData.status);
 	}	
 	jsonData = await pvpData.json();	//we convert it into json cuz its actually on plaintext for some reason
 	arrayData=Object.values(jsonData["players"]);
 	//console.log(arrayData.length);
-	if(arrayData.length<1){
+	if(arrayData.length<1){ //if is pvp empty
 		const newDiv = document.createElement("div");
-		newDiv.innerHTML = "<h1>PvP is dead</h1><img src='https://media.tenor.com/DqOx5At4J4cAAAAi/explosion.gif'>";
+		newDiv.innerHTML = "<plrDiv><h1>PvP is dead</h1><img src='https://media.tenor.com/DqOx5At4J4cAAAAi/explosion.gif'></plrDiv>";
 		const currentDiv = document.getElementById("div1");
 		document.body.insertBefore(newDiv,currentDiv);
 	}else{
@@ -40,21 +50,24 @@ window.onload= async function getData(){
 }
 
 function mapHotbar(itm){
+	//writing manually the HTML again
 	var pageHotbar ="<div class='slotid'>"+
-		(count%10) +
+		(count%10) + 
 		"<div class='item itemslot'>"+
-			"<img style='width:40px' src='https://tinvapi.dark-gaming.com/item_image/"+itm["netId"]+"'>"+
+			"<img style='width:30px' src='https://tinvapi.dark-gaming.com/item_image/"+itm["netId"]+"'>"+
 		"</div>"+
+		"<div align='right'>"+itm["stack"] +"</div>"+
 	"</div>";
 	pageHeader=pageHeader+pageHotbar;
 	count=count+1;
 }
+
 var count = 1;	//this is just for the slot id
 var pageHeader = "";//cuz i ain't dealing with js parameters, fuck it, public
 var pageFooter=	"</div></div><br>";
 function mapData(plr){
 	count=1;
-	var nickName=(plr["nickname"].replaceAll(" ","%20")).replaceAll("#","%23"); //+ nor %20 works anymore, they broke it litterally while i was making this :< , Congrats administrtion!
+	var nickName=(plr["nickname"].replaceAll(" ","%20")).replaceAll("#","%23"); //We do some encoding or everything breaks
 	var hotbar = Object.values(plr["hotbar"]);
 	var headItem = Object.values(plr["headItem"]);
 	/*console.log(plr);
@@ -67,11 +80,11 @@ function mapData(plr){
 	console.log(plr["maxManaWithBuffs"]);
 	console.log(hotbar);
 	console.log(headItem[0]);*/
-	const newContainer = document.createElement("div");
+	const newContainer = document.createElement("plrDiv"); //a place to fill everything we are gonna write
 	//Writting manually the html
 	pageHeader = "<div class='container player'>"+
 	"<img src='https://tinvapi.dark-gaming.com/item_image/"+headItem[0]+"'/>"+
-	plr["nickname"]+" &#9;&#9;♥"+plr["health"]+"/"+plr["maxHealthWithBuffs"]+" ★"+plr["mana"]+"/"+plr["maxManaWithBuffs"]+" Registered on :"+ plr["registered"]+ "<a href="+tinvURL+nickName+" >\tView Inventory</a>"+
+	plr["nickname"]+" &nbsp;&nbsp;♥"+plr["health"]+"/"+plr["maxHealthWithBuffs"]+" &nbsp;&nbsp;★"+plr["mana"]+"/"+plr["maxManaWithBuffs"]+" &nbsp;&nbsp;Registered on :"+ plr["registered"]+ "&nbsp;&nbsp;<button value="+tinvURL+loadTo+"/"+nickName+" onclick='buildInventory(this)'>View Inventory</button>"+
 	"<br>"+
 	"<div class='container hotbar'>";
 	hotbar.forEach((element)=> //because javascript is javascript we have to make it into another function
@@ -79,9 +92,206 @@ function mapData(plr){
 	);
 	//console.log(pageHeader+pageFooter);
 	newContainer.innerHTML = pageHeader+pageFooter;
-	const currentDiv = document.getElementById("div1");
+	const currentDiv = document.getElementById("plrDiv");
 	document.body.insertBefore(newContainer,currentDiv);
 }
+function clearAndRebuild(){
+	const btn = document.getElementById("toggle");
+	clear();
+	
+	//console.log(btn.innerHTML);
+	if(mode==0){
+		mode=1;
+		btn.innerHTML = "Change to PvP"
+	}else{
+		mode=0;
+		btn.innerHTML = "Change to Survival"
+	}
+	//console.log(mode)
+	getData()
+}
+
+function clear(){
+	var plrList = document.querySelectorAll("plrDiv");
+	//console.log(plrList);
+	plrList.forEach((plr)=>
+		clearList(plr)
+	);
+}
+
+
+
+function clearList(plr){
+	//console.log(plr);
+	plr.remove();
+}
+
+async function buildInventory(plrName){
+	//console.log(plrName.value);
+	clear();
+	
+	if(typeof plrName === 'string'){
+	var invData = await fetch(plrName);
+	}else{
+	var invData = await fetch(plrName.value);
+	}
+	if(!invData.ok){
+		const errDiv = document.createElement("plrDiv");
+		errDiv.innerHTML = "<h1>Tinv API likelly is down or broken, Send a Message to Geolindrag/Make a new issue on Github to see if can be fixed</h1><img src='https://media1.tenor.com/m/os2Fb38u1Y8AAAAd/peralnq.gif'>";
+		const cerrDiv = document.getElementById("plrDiv1");
+		document.body.insertBefore(errDiv,cerrDiv);
+		throw new Error('We got a :' + invData.status);
+	}	
+	plr = await invData.json();	//Surprise! its again on plain text
+	//console.log(plr);
+	if(plr["status"]!=200){
+		const errDiv2 = document.createElement("plrDiv");
+		errDiv2.innerHTML = "<h1>Data does not exist,Player is offline or never entered survival in this reset</h1><button class='errorBtn' onclick='getData()'>Return</button><br><br><img src='https://media1.tenor.com/m/-J9hf3DaHUYAAAAd/dessert-desert.gif'>";
+		const cerrDiv2 = document.getElementById("plrDiv1");
+		document.body.insertBefore(errDiv2,cerrDiv2);
+	}
+	arrayData=plr["items"];
+	var inventory = arrayData["inventory"]
+	var equipment = arrayData["equipment"]
+	var extraAcc = arrayData["miscEquip"]
+	var piggy = arrayData["piggy"]
+	var safe = arrayData["safe"]
+	var vault = arrayData["vault"]
+	var forge = arrayData["forge"]
+	var dyes = arrayData["dyes"]
+	var extraAccDyes = arrayData["miscDye"]
+	var trash = arrayData["trash"]
+	
+	//console.log(inventory);
+	//console.log(equipment);
+	//console.log(extraAcc);
+	//console.log(piggy);
+	//console.log(safe);
+	//console.log(vault);
+	//console.log(forge);
+	//console.log(dyes);
+	//console.log(extraAccDyes);
+	//console.log(trash);
+	
+	const newInventory = document.createElement("plrDiv");
+	
+	pageHeader = "<div class='container player'>"+
+	plr["nickname"]+" &nbsp;&nbsp;♥"+plr["health"]+"/"+plr["maxHealthWithBuffs"]+" &nbsp;&nbsp;★"+plr["mana"]+"/"+plr["maxManaWithBuffs"]+" &nbsp;&nbsp;Registered on :"+ plr["registered"]+ "&nbsp;&nbsp;<button class='errorBtn' onclick='getData()'>Return</button>"+
+	"<br>"+
+	"<div class='container inventory'>	<p style='position: absolute;inset-inline-start:20px;inset-block-start:-36px;'/>Inventory</p><p style='position: absolute;inset-inline-start:510px;inset-block-start:36px;'/>Coins/Ammo</p>";
+	//and now we have to do a foreach manually for every array
+	count=1;
+
+	inventory.forEach((element)=> 
+		mapInv(element)
+	);
+	count=1;
+	pageHeader = pageHeader+"</div><div class='container piggy'><p style='position: absolute;inset-inline-start:20px;inset-block-start:-36px;'/>Piggy bank</p>";
+	piggy.forEach((element)=>
+		mapStorage(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container safe'><p style='position: absolute;inset-inline-start:20px;inset-block-start:-36px;'/>Safe</p>";
+	safe.forEach((element)=>
+		mapStorage(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container vault'><p style='position: absolute;inset-inline-start:20px;inset-block-start:-36px;'/>Void Vault</p>";
+	vault.forEach((element)=>
+		mapStorage(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container forge'><p style='position: absolute;inset-inline-start:20px;inset-block-start:-36px;'/>Defender's Forge</p>";
+	forge.forEach((element)=>
+		mapStorage(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container equipment'><p style='position: absolute;inset-inline-start:-40px;inset-block-start:-36px;'/>Equipment</p>";
+	equipment.forEach((element)=>
+		mapEquipment(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container dyes'>";
+	dyes.forEach((element)=>
+		mapEquipment(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container extraEquip'><p style='position: absolute;inset-inline-start:-40px;inset-block-start:-60px;'/>Extra accesories</p>";
+	extraAcc.forEach((element)=>
+		mapEquipment(element)
+	);
+	pageHeader = pageHeader+"</div><div class='container extraEquipDyes'>";
+	extraAccDyes.forEach((element)=>
+		mapEquipment(element)
+	);
+	
+	
+	newInventory.innerHTML = pageHeader+pageFooter;
+	const currentDiv = document.getElementById("plrDiv");
+	document.body.insertBefore(newInventory,currentDiv);
+	
+}
+
+function mapInv(invData){//for inv format specifically
+	if(count<=50){
+	var pageInventory ="<div class='slotid'>"+
+		"&nbsp;" + 
+		"<div class='item itemslotsmall'>"+
+			"<img style='width:26px' src='https://tinvapi.dark-gaming.com/item_image/"+invData["netId"]+"'>"+
+		"</div>"+
+		"<div align='right'>"+invData["stack"] +"</div>"+
+	"</div>";
+		pageHeader=pageHeader+pageInventory;
+		count=count+1;
+	}else if(count==51){
+		pageHeader=pageHeader+"</div>"+
+		"<div class='container coinAmmo'>"+
+		"<div class='slotid'>"+
+		"<div class='item coinAmmoSlot'>"+
+			"<img style='width:26px' src='https://tinvapi.dark-gaming.com/item_image/"+invData["netId"]+"'>"+
+		"</div>"+
+		"<div align='right'>"+invData["stack"] +"</div>"+
+	"</div>";
+		count=count+1;
+	}else if (count<=58){
+		pageInventory="<div class='slotid'>"+
+		"<div class='item coinAmmoSlot'>"+
+			"<img style='width:26px' src='https://tinvapi.dark-gaming.com/item_image/"+invData["netId"]+"'>"+
+		"</div>"+
+		"<div align='right'>"+invData["stack"] +"</div>"+
+	"</div>";
+		pageHeader=pageHeader+pageInventory;
+		count=count+1;
+	}
+
+}
+
+function mapStorage(invData){//only shows stack number
+	var pageInventory ="<div class='slotid'>"+
+		"&nbsp;" + 
+		"<div class='item itemslotsmall'>"+
+			"<img style='width:26px' src='https://tinvapi.dark-gaming.com/item_image/"+invData["netId"]+"'>"+
+		"</div>"+
+		"<div align='right'>"+invData["stack"] +"</div>"+
+	"</div>";
+	pageHeader=pageHeader+pageInventory;
+	count=count+1;
+}
+
+function mapEquipment(invData){//Hides stack number
+	var pageInventory ="<div class='slotid'>"+
+		"&nbsp;" + 
+		"<div class='item itemslotEquip'>"+
+			"<img style='width:26px' src='https://tinvapi.dark-gaming.com/item_image/"+invData["netId"]+"'>"+
+		"</div>"+
+		"<div align='right'>&nbsp;</div>"+
+	"</div>";
+	pageHeader=pageHeader+pageInventory;
+	count=count+1;
+}
+
+function buildTinvURL(){
+	var inputText = document.getElementById("SearchFor");
+	
+	var newURL = tinvURL+"survival/"+(inputText.value.replaceAll(" ","%20")).replaceAll("#","%23");;
+	console.log(newURL);
+	buildInventory(newURL);
+}
+
 </SCRIPT>
 <STYLE>
 body {
@@ -96,6 +306,196 @@ body {
 	0px 0px 1px #22DDFF;
 	color:white;
 }
+.inventory{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #22FFDD,
+	0px 0px 1px #22FFDD;
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:466px;
+	min-width:466px;
+	position: absolute;
+	inset-inline-start:20px;
+	inset-block-start:100px;
+}
+.piggy{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #EE33CC,
+	0px 0px 1px #EE33CC;
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:466px;
+	min-width:466px;
+	position: absolute;
+	inset-inline-start:20px;
+	inset-block-start:420px;
+}
+.safe{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #999999,
+	0px 0px 1px #999999;
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:466px;
+	min-width:466px;
+	position: absolute;
+	inset-inline-start:20px;
+	inset-block-start:680px;
+}
+.vault{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #6600AA,
+	0px 0px 1px #6600AA;
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:466px;
+	min-width:466px;
+	position: absolute;
+	inset-inline-start:20px;
+	inset-block-start:940px;
+}
+.forge{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #AAAA00,
+	0px 0px 1px #AAAA00;
+	gap: 5px;
+	display: flex;
+	flex-direction: row;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:466px;
+	min-width:466px;
+	position: absolute;
+	inset-inline-start:20px;
+	inset-block-start:1200px;
+}
+.coinAmmo{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #22FFDD,
+	0px 0px 1px #22FFDD;
+	gap: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: left;
+	flex-wrap: wrap;
+	color:white;
+	width:72px;
+	min-width:72px;
+	height:170px;
+	max-height:170px;
+	position: absolute;
+	inset-inline-start:520px;
+	inset-block-start:190px;
+}
+.equipment{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #008811,
+	0px 0px 1px #008811;
+	gap: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: right;
+	flex-wrap: wrap-reverse;
+	color:white;
+	width:72px;
+	min-width:72px;
+	height:605px;
+	max-height:990px;
+	position: absolute;
+	inset-inline-start:800px;
+	inset-block-start:100px;
+}
+.dyes{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #116688,
+	0px 0px 1px #116688;
+	gap: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: right;
+	flex-wrap: wrap-reverse;
+	color:white;
+	width:36;
+	min-width:36;
+	height:605px;
+	max-height:990px;
+	position: absolute;
+	inset-inline-start:761px;
+	inset-block-start:100px;
+}
+.extraEquip{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #008811,
+	0px 0px 1px #008811;
+	gap: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: right;
+	flex-wrap: wrap-reverse;
+	color:white;
+	width:36;
+	min-width:36;
+	height:303px;
+	max-height:990px;
+	position: absolute;
+	inset-inline-start:700px;
+	inset-block-start:400px;
+}
+.extraEquipDyes{
+    background-color:black;
+    border:none;
+    border-radius:5px;
+	box-shadow: 0px 0px 10px 1px #008811,
+	0px 0px 1px #008811;
+	gap: 5px;
+	display: flex;
+	flex-direction: column;
+	justify-content: right;
+	flex-wrap: wrap-reverse;
+	color:white;
+	width:36;
+	min-width:36;
+	height:303px;
+	max-height:990px;
+	position: absolute;
+	inset-inline-start:660px;
+	inset-block-start:400px;
+}
 .hotbar{
 	gap: 5px;
 	display: flex;
@@ -109,11 +509,30 @@ body {
 	display: flex;
 	align-items: center;
 	width: 64px;
-	height: 50px;
-
+	height: 40px;
+}
+.itemslotsmall{
+	justify-content: center;
+	display: flex;
+	align-items: center;
+	width: 42px;
+	height: 20px;
+}
+.itemslotEquip{
+	justify-content: center;
+	display: flex;
+	align-items: center;
+	width: 32px;
+	height: 20px;
+}
+.coinAmmoSlot{
+	justify-content: center;
+	display: flex;
+	align-items: center;
+	width: 32px;
+	height: 20px;
 }
 .slotid{
-	
 	border: 3px solid black;
 	border:none;
     border-radius:5px;
@@ -124,10 +543,33 @@ body {
     border-bottom-color: aqua;
 	vertical-align: top;
 }
+
+.survBtn {
+  background-color: #005577; 
+  border: none;
+  color: white;
+  padding: 5px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.errorBtn {
+  background-color: #770000; 
+  border: none;
+  color: white;
+  padding: 5px 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
 </STYLE>
-"Because we always have to fix everything :<"
+"Please don't click the button too fast"
+<button class="survBtn" id="toggle" onclick="clearAndRebuild()">Change to Survival</button>
+&nbsp;See a player's Inv. who is offline (Survival) : 
+<input type="Text" value="Player's name" id="SearchFor" style="display:show;"/><button onclick="buildTinvURL()">Search</button>
+<br>
 <br>
 
 </BODY>
-
 </HTML>
