@@ -54,7 +54,7 @@ var pageHeader = "";//cuz i ain't dealing with js parameters, fuck it, public
 var pageFooter=	"</div></div><br>";
 function mapData(plr){
 	count=1;
-	var nickName=(plr["nickname"].replaceAll(" ","+")).replaceAll("#","%23"); //+ nor %20 works anymore, they broke it litterally while i was making this :< , Congrats administrtion!
+	var nickName=(plr["nickname"].replaceAll(" ","%20")).replaceAll("#","%23"); //+ nor %20 works anymore, they broke it litterally while i was making this :< , Congrats administrtion!
 	var hotbar = Object.values(plr["hotbar"]);
 	var headItem = Object.values(plr["headItem"]);
 	/*console.log(plr);
@@ -129,4 +129,5 @@ body {
 <br>
 
 </BODY>
+
 </HTML>
