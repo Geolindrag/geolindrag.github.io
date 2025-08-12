@@ -135,13 +135,21 @@ async function buildInventory(plrName){
 	}else{
 	var invData = await fetch(plrName.value);
 	}
-	if(!invData.ok){
+	if(!invData.ok&&invData.status!=500){
 		const errDiv = document.createElement("plrDiv");
 		errDiv.innerHTML = "<h1>Tinv API likelly is down or broken, Send a Message to Geolindrag/Make a new issue on Github to see if can be fixed</h1><img src='https://media1.tenor.com/m/os2Fb38u1Y8AAAAd/peralnq.gif'>";
 		const cerrDiv = document.getElementById("plrDiv1");
 		document.body.insertBefore(errDiv,cerrDiv);
 		throw new Error('We got a :' + invData.status);
-	}	
+		return;
+	}else if (invData.status==500){
+		const errDiv2 = document.createElement("plrDiv");
+		errDiv2.innerHTML = "<h1>Data does not exist,Player is offline or never entered survival in this reset</h1><button class='errorBtn' onclick='getData()'>Return</button><br><br><img src='https://media1.tenor.com/m/-J9hf3DaHUYAAAAd/dessert-desert.gif'>";
+		const cerrDiv2 = document.getElementById("plrDiv1");
+		document.body.insertBefore(errDiv2,cerrDiv2);
+		throw new Error('We got a :' + invData.status);
+		return;
+	}
 	plr = await invData.json();	//Surprise! its again on plain text
 	//console.log(plr);
 	if(plr["status"]!=200){
@@ -574,5 +582,4 @@ body {
 
 </BODY>
 </HTML>
-
 
